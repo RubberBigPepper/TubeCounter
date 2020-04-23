@@ -5,15 +5,16 @@
     android:layout_height="match_parent">
 
     <org.opencv.android.JavaCameraView
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="match_parent"
-        android:visibility="gone"
+        android:visibility="visible"
+        android:layout_margin="0dp"
         android:id="@+id/view"
-        android:layout_weight="1"
-        opencv:camera_id="0" />
+        opencv:camera_id="back"
+        android:layout_weight="2"/>
 
     <ScrollView
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="match_parent"
         android:minWidth="200sp"
         android:layout_weight="1">

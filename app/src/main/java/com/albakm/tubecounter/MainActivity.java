@@ -17,6 +17,8 @@ import android.widget.TextView;
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewFrame;
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2;
+import org.opencv.android.JavaCamera2View;
+import org.opencv.android.JavaCameraView;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
@@ -30,7 +32,7 @@ import java.util.Locale;
 import java.util.Set;
 
 public class MainActivity extends AppCompatActivity implements CvCameraViewListener2{
-    private CameraBridgeViewBase mOpenCvCameraView;
+    private JavaCameraView mOpenCvCameraView;
     private static final int PERMISSION_REQUEST_CODE = 1253;
     private static final int AVERAGE_COUNT = 10;//сколько будем помнить шагов для усреднения
 
@@ -63,9 +65,10 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
         seekBarMaxRadius.setProgress(cPrefs.getInt("maxRadius",seekBarMaxRadius.getProgress()));
         seekBarMinDistance.setProgress(cPrefs.getInt("minDistance",seekBarMinDistance.getProgress()));
         showCounts.run();
-        mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.view);
+        mOpenCvCameraView = (JavaCameraView) findViewById(R.id.view);
         mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
         mOpenCvCameraView.setCvCameraViewListener(this);
+        mOpenCvCameraView.setPadding(0,0,0,0);
         OpenCVLoader.initDebug();
         mOpenCvCameraView.setMaxFrameSize(1280,720);
         mOpenCvCameraView.enableView();
