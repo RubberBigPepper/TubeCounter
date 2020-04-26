@@ -10,7 +10,9 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.SurfaceView;
+import android.view.View;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
@@ -31,7 +33,7 @@ import java.util.LinkedList;
 import java.util.Locale;
 import java.util.Set;
 
-public class MainActivity extends AppCompatActivity implements CvCameraViewListener2{
+public class MainActivity extends AppCompatActivity implements CvCameraViewListener2, View.OnClickListener{
     private JavaCameraView mOpenCvCameraView;
     private static final int PERMISSION_REQUEST_CODE = 1253;
     private static final int AVERAGE_COUNT = 10;//сколько будем помнить шагов для усреднения
@@ -43,6 +45,11 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
     private TextView textViewMinRadius;
     private TextView textViewMaxRadius;
     private TextView textViewMinDistance;
+
+    private Button btnSnapShot;
+
+    private Mat matRGBASnap=null;//последний кадр с камеры, для режима стоп-кадр
+    private boolean snapShotMode=false;//режим показа последнего кадра
 
     private LinkedList<Integer> counterCircle=new LinkedList<>();//количество кругов на предыдущих шагах для усреднения.
     @Override
@@ -60,11 +67,13 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
         textViewMinRadius=(TextView)findViewById(R.id.textViewMinRadius);
         textViewMaxRadius=(TextView)findViewById(R.id.textViewMaxRadius);
         textViewMinDistance=(TextView)findViewById(R.id.textViewMinDistance);
+        btnSnapShot=(Button)findViewById(R.id.buttonSnapshot);
         SharedPreferences cPrefs=getSharedPreferences("common",MODE_PRIVATE);
         seekBarMinRadius.setProgress(cPrefs.getInt("minRadius",seekBarMinRadius.getProgress()));
         seekBarMaxRadius.setProgress(cPrefs.getInt("maxRadius",seekBarMaxRadius.getProgress()));
         seekBarMinDistance.setProgress(cPrefs.getInt("minDistance",seekBarMinDistance.getProgress()));
         showCounts.run();
+        btnSnapShot.setOnClickListener(this);
         mOpenCvCameraView = (JavaCameraView) findViewById(R.id.view);
         mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
         mOpenCvCameraView.setCvCameraViewListener(this);
@@ -131,8 +140,15 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
     }
 
     public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
-        Mat rgbaFrame=inputFrame.rgba();
-        Mat grayFrame=inputFrame.gray();
+        if (!snapShotMode || matRGBASnap == null) {
+            matRGBASnap = inputFrame.rgba();
+        }
+        return makeCirclesOnFrame(matRGBASnap.clone());
+    }
+
+    private Mat makeCirclesOnFrame(Mat rgbaFrame){
+        Mat grayFrame=new Mat();
+        Imgproc.cvtColor(rgbaFrame,grayFrame,Imgproc.COLOR_RGBA2GRAY);
         Imgproc.medianBlur(grayFrame, grayFrame, 5);
         Mat circles = new Mat();
         double minDistance=seekBarMinDistance.getProgress()+1.0d;
@@ -172,4 +188,14 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
             textViewMinDistance.setText(String.format(Locale.US,"%s: %d",getString(R.string.minDistance),seekBarMinDistance.getProgress()+1));
         }
     };
+
+    @Override
+    public void onClick(View view) {
+        switch (view.getId()){
+            case R.id.buttonSnapshot:
+                snapShotMode=!snapShotMode;
+                btnSnapShot.setText(snapShotMode?R.string.continuePreview:R.string.takeSnapShot);
+                break;
+        }
+    }
 }

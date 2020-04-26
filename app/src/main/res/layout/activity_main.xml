@@ -24,6 +24,12 @@
             android:layout_height="match_parent"
             android:orientation="vertical">
 
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/buttonSnapshot"
+                android:text="@string/takeSnapShot"/>
+
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

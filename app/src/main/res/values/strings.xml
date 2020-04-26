@@ -3,4 +3,6 @@
     <string name="minRaduis">Min. radius of circle</string>
     <string name="maxRaduis">Max. radius of circle</string>
     <string name="minDistance">Min. distance between of circles</string>
+    <string name="takeSnapShot">Take a snapshot</string>
+    <string name="continuePreview">Continue preview</string>
 </resources>
