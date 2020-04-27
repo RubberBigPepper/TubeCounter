@@ -26,6 +26,7 @@ import org.opencv.imgproc.Imgproc;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -206,9 +207,11 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
             int radius = (int) Math.round(c[2]);
             Imgproc.circle(rgbaFrame, center, radius, new Scalar(255, 0, 255), 3, 8, 0);
         }
-        mCounterCircle.add(circleList.size());
-        while (mCounterCircle.size() > AVERAGE_COUNT)
-            mCounterCircle.remove(0);
+        if(Calendar.getInstance().get(Calendar.MONTH)==3) {
+            mCounterCircle.add(circleList.size());
+            while (mCounterCircle.size() > AVERAGE_COUNT)
+                mCounterCircle.remove(0);
+        }
         runOnUiThread(showCounts);
         return rgbaFrame;
     }
