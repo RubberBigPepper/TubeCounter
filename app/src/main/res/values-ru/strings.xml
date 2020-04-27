@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">TubeCounter</string>
+    <string name="minRaduis">Мин. радиус кругов</string>
+    <string name="maxRaduis">Макс. радиус кругов</string>
+    <string name="minDistance">Мин. расст. между кругами</string>
+    <string name="takeSnapShot">Сделать стопкадр</string>
+    <string name="continuePreview">Продолжить с камерой</string>
+    <string name="flashOn">Включить вспышку</string>
+    <string name="items">шт.</string>
+    <string name="uncountedItems">Неподсчитанные круги:</string>
+</resources>

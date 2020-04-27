@@ -4,14 +4,14 @@
     android:orientation="horizontal"
     android:layout_height="match_parent">
 
-    <org.opencv.android.JavaCameraView
+    <com.albakm.tubecounter.JavaCameraViewEx
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:visibility="visible"
         android:layout_margin="0dp"
         android:id="@+id/view"
         opencv:camera_id="back"
-        android:layout_weight="2"/>
+        android:layout_weight="1"/>
 
     <ScrollView
         android:layout_width="0dp"
@@ -20,7 +20,7 @@
         android:layout_weight="1">
 
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical">
 
@@ -30,46 +30,70 @@
                 android:id="@+id/buttonSnapshot"
                 android:text="@string/takeSnapShot"/>
 
-            <TextView
+            <CheckBox
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:id="@+id/textViewMinRadius"
-                android:text="@string/minRaduis"/>
+                android:id="@+id/checkFlash"
+                android:text="@string/flashOn"/>
 
-            <SeekBar
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:id="@+id/seekMinRadius"
-                android:max="99"
-                />
+                android:orientation="horizontal">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:id="@+id/textViewMaxRadius"
-                android:text="@string/maxRaduis"/>
+                <Button
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/btnMinus"
+                    style="?android:attr/buttonStyleSmall"
+                    android:layout_gravity="center_vertical"
+                    android:text="-"/>
 
-            <SeekBar
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/uncountedItems"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:layout_gravity="center_horizontal"
+                        android:id="@+id/textViewUncountedItems"
+                        android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                        android:text=""/>
+
+                </LinearLayout>
+
+                <Button
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="?android:attr/buttonStyleSmall"
+                    android:id="@+id/btnPlus"
+                    android:layout_gravity="center_vertical"
+                    android:text="+"/>
+
+            </LinearLayout>
+
+            <include layout="@layout/extended_seek"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:id="@+id/seekMaxRadius"
-                android:progress="29"
-                android:max="100"
-                />
+                android:id="@+id/includeMinRadius"
+                android:layout_height="wrap_content"/>
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:id="@+id/textViewMinDistance"
-                android:text="@string/minDistance"/>
-
-            <SeekBar
+            <include layout="@layout/extended_seek"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:id="@+id/seekMinDistance"
-                android:progress="30"
-                android:max="100"
-                />
+                android:id="@+id/includeMaxRadius"
+                android:layout_height="wrap_content"/>
+
+            <include layout="@layout/extended_seek"
+                android:layout_width="match_parent"
+                android:id="@+id/includeMinDistance"
+                android:layout_height="wrap_content"/>
 
         </LinearLayout>
     </ScrollView>

@@ -1,9 +1,7 @@
 package com.albakm.tubecounter;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
-
 import android.Manifest;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -11,47 +9,52 @@ import android.os.Build;
 import android.os.Bundle;
 import android.view.SurfaceView;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.SeekBar;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.TextView;
 
-import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewFrame;
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2;
-import org.opencv.android.JavaCamera2View;
-import org.opencv.android.JavaCameraView;
 import org.opencv.android.OpenCVLoader;
-import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.Locale;
-import java.util.Set;
 
-public class MainActivity extends AppCompatActivity implements CvCameraViewListener2, View.OnClickListener{
-    private JavaCameraView mOpenCvCameraView;
+public class MainActivity extends AppCompatActivity implements CvCameraViewListener2,
+        OnClickListener, CompoundButton.OnCheckedChangeListener {
+    private JavaCameraViewEx mOpenCvCameraView;
     private static final int PERMISSION_REQUEST_CODE = 1253;
     private static final int AVERAGE_COUNT = 10;//сколько будем помнить шагов для усреднения
 
-    private SeekBar seekBarMinRadius;
-    private SeekBar seekBarMaxRadius;
-    private SeekBar seekBarMinDistance;
+    private ExtendedSpinnerHelper mExtSpinnerMinRadius;
+    private ExtendedSpinnerHelper mExtSpinnerMaxRadius;
+    private ExtendedSpinnerHelper mExtSpinnerMinDistance;
 
-    private TextView textViewMinRadius;
-    private TextView textViewMaxRadius;
-    private TextView textViewMinDistance;
+    private CheckBox mCheckFlash;
+    private TextView mTextViewUncounted;
 
-    private Button btnSnapShot;
+    private Button mBtnSnapShot;
+    private Button mBtnMinus;
+    private Button mBtnPlus;
 
-    private Mat matRGBASnap=null;//последний кадр с камеры, для режима стоп-кадр
-    private boolean snapShotMode=false;//режим показа последнего кадра
+    private Mat mMatRGBASnap = null;//последний кадр с камеры, для режима стоп-кадр
+    private boolean mSnapShotMode = false;//режим показа последнего кадра
+    private int mUncountedItem = 0;
 
-    private LinkedList<Integer> counterCircle=new LinkedList<>();//количество кругов на предыдущих шагах для усреднения.
+    private LinkedList<Integer> mCounterCircle = new LinkedList<>();//количество кругов на предыдущих шагах для усреднения.
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -59,27 +62,35 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
         CheckPermissionsOrRun();
     }
 
-    void ShowWindowContent(){
+    void ShowWindowContent() {
         setContentView(R.layout.activity_main);
-        seekBarMinRadius=(SeekBar)findViewById(R.id.seekMinRadius);
-        seekBarMaxRadius=(SeekBar)findViewById(R.id.seekMaxRadius);
-        seekBarMinDistance=(SeekBar)findViewById(R.id.seekMinDistance);
-        textViewMinRadius=(TextView)findViewById(R.id.textViewMinRadius);
-        textViewMaxRadius=(TextView)findViewById(R.id.textViewMaxRadius);
-        textViewMinDistance=(TextView)findViewById(R.id.textViewMinDistance);
-        btnSnapShot=(Button)findViewById(R.id.buttonSnapshot);
-        SharedPreferences cPrefs=getSharedPreferences("common",MODE_PRIVATE);
-        seekBarMinRadius.setProgress(cPrefs.getInt("minRadius",seekBarMinRadius.getProgress()));
-        seekBarMaxRadius.setProgress(cPrefs.getInt("maxRadius",seekBarMaxRadius.getProgress()));
-        seekBarMinDistance.setProgress(cPrefs.getInt("minDistance",seekBarMinDistance.getProgress()));
+        mExtSpinnerMinRadius = new ExtendedSpinnerHelper(findViewById(R.id.includeMinRadius), R.string.minRaduis, 1, 50);
+        mExtSpinnerMaxRadius = new ExtendedSpinnerHelper(findViewById(R.id.includeMaxRadius), R.string.maxRaduis, 30,100);
+        mExtSpinnerMinDistance = new ExtendedSpinnerHelper(findViewById(R.id.includeMinDistance), R.string.minDistance, 1, 100);
+
+        mCheckFlash = (CheckBox) findViewById(R.id.checkFlash);
+        mTextViewUncounted = (TextView) findViewById(R.id.textViewUncountedItems);
+
+        mBtnSnapShot = (Button) findViewById(R.id.buttonSnapshot);
+        mBtnMinus = (Button) findViewById(R.id.btnMinus);
+        mBtnPlus = (Button) findViewById(R.id.btnPlus);
+
+        SharedPreferences cPrefs = getSharedPreferences("common", MODE_PRIVATE);
+        mExtSpinnerMinRadius.setValue(cPrefs.getInt("minRadius", mExtSpinnerMinRadius.getValue()));
+        mExtSpinnerMaxRadius.setValue(cPrefs.getInt("maxRadius", mExtSpinnerMaxRadius.getValue()));
+        mExtSpinnerMinDistance.setValue(cPrefs.getInt("minDistance", mExtSpinnerMinDistance.getValue()));
+
         showCounts.run();
-        btnSnapShot.setOnClickListener(this);
-        mOpenCvCameraView = (JavaCameraView) findViewById(R.id.view);
+        mBtnMinus.setOnClickListener(this);
+        mBtnPlus.setOnClickListener(this);
+        mBtnSnapShot.setOnClickListener(this);
+        mCheckFlash.setOnCheckedChangeListener(this);
+        mOpenCvCameraView = (JavaCameraViewEx) findViewById(R.id.view);
         mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
         mOpenCvCameraView.setCvCameraViewListener(this);
-        mOpenCvCameraView.setPadding(0,0,0,0);
+        mOpenCvCameraView.setPadding(0, 0, 0, 0);
         OpenCVLoader.initDebug();
-        mOpenCvCameraView.setMaxFrameSize(1280,720);
+        mOpenCvCameraView.setMaxFrameSize(1280, 720);
         mOpenCvCameraView.enableView();
     }
 
@@ -126,10 +137,10 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
         super.onDestroy();
         if (mOpenCvCameraView != null)
             mOpenCvCameraView.disableView();
-        SharedPreferences.Editor cPrefs=getSharedPreferences("common",MODE_PRIVATE).edit();
-        cPrefs.putInt("minRadius",seekBarMinRadius.getProgress());
-        cPrefs.putInt("maxRadius",seekBarMaxRadius.getProgress());
-        cPrefs.putInt("minDistance",seekBarMinDistance.getProgress());
+        SharedPreferences.Editor cPrefs = getSharedPreferences("common", MODE_PRIVATE).edit();
+        cPrefs.putInt("minRadius", mExtSpinnerMinRadius.getValue());
+        cPrefs.putInt("maxRadius", mExtSpinnerMaxRadius.getValue());
+        cPrefs.putInt("minDistance", mExtSpinnerMinDistance.getValue());
         cPrefs.commit();
     }
 
@@ -140,61 +151,106 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
     }
 
     public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
-        if (!snapShotMode || matRGBASnap == null) {
-            matRGBASnap = inputFrame.rgba();
+        if (!mSnapShotMode || mMatRGBASnap == null) {
+            mMatRGBASnap = inputFrame.rgba();
         }
-        return makeCirclesOnFrame(matRGBASnap.clone());
+        return makeCirclesOnFrame(mMatRGBASnap.clone());
     }
 
-    private Mat makeCirclesOnFrame(Mat rgbaFrame){
-        Mat grayFrame=new Mat();
-        Imgproc.cvtColor(rgbaFrame,grayFrame,Imgproc.COLOR_RGBA2GRAY);
+    private double distance(double dX1,double dY1, double dX2, double dY2){
+        return Math.sqrt(Math.pow(dX1-dX2,2.0d)+Math.pow(dY1-dY2,2.0d));
+    }
+
+    private  LinkedList <double[]> makeNestingCircles(Mat matCircles){
+        LinkedList <double[]>circleList=new LinkedList <double[]>();//коллекция кругов, будем в ней хранить круги для вычленения вложенных
+        for (int x = 0; x < matCircles.cols(); x++) {
+            circleList.add(matCircles.get(0, x));
+        }
+        Collections.sort(circleList, new Comparator<double[]>() {//сортируем от бОльшего радиуса к меньшему
+            @Override
+            public int compare(double[] o1, double[] o2) {
+                return -Double.compare(o1[2],o2[2]);
+            }
+        });
+        for(int n=0;n<circleList.size();n++){
+            double[] circleBig=circleList.get(n);
+            for(int m=n+1;m<circleList.size();m++){
+                double[] circleSmall=circleList.get(m);
+                double distanceRadius=distance(circleBig[0],circleBig[1],circleSmall[0],circleSmall[1]);
+                if(distanceRadius<circleBig[2]+0.9d*circleSmall[2]) {//круги слишком близко, удаляем меньший
+                    circleList.remove(m);
+                    m--;
+                }
+            }
+        }
+        return circleList;
+    }
+
+    private Mat makeCirclesOnFrame(Mat rgbaFrame) {
+        Mat grayFrame = new Mat();
+        Imgproc.cvtColor(rgbaFrame, grayFrame, Imgproc.COLOR_RGBA2GRAY);
         Imgproc.medianBlur(grayFrame, grayFrame, 5);
         Mat circles = new Mat();
-        double minDistance=seekBarMinDistance.getProgress()+1.0d;
-        int minRadius=seekBarMinRadius.getProgress()+1;
-        int maxRadius=seekBarMaxRadius.getProgress()+1;
+        double minDistance = mExtSpinnerMinDistance.getValue();
+        int minRadius = mExtSpinnerMinRadius.getValue();
+        int maxRadius = mExtSpinnerMaxRadius.getValue();
         Imgproc.HoughCircles(grayFrame, circles, Imgproc.HOUGH_GRADIENT, 1.0,
                 minDistance, // change this value to detect circles with different distances to each other
                 100.0, 30.0, minRadius, maxRadius); // change the last two parameters
         // (min_radius & max_radius) to detect larger circles
-        for (int x = 0; x < circles.cols(); x++) {
-            double[] c = circles.get(0, x);
+        LinkedList <double[]>circleList=makeNestingCircles(circles);//обработка коллекции, вычленение вложенных кругов
+        for(int n=0;n<circleList.size();n++){
+            double[] c = circleList.get(n);
             Point center = new Point(Math.round(c[0]), Math.round(c[1]));
             // circle outline
             int radius = (int) Math.round(c[2]);
-            Imgproc.circle(rgbaFrame, center, radius, new Scalar(255,0,255), 3, 8, 0 );
+            Imgproc.circle(rgbaFrame, center, radius, new Scalar(255, 0, 255), 3, 8, 0);
         }
-        counterCircle.add(circles.cols());
-        while (counterCircle.size()>AVERAGE_COUNT)
-            counterCircle.remove(0);
+        mCounterCircle.add(circleList.size());
+        while (mCounterCircle.size() > AVERAGE_COUNT)
+            mCounterCircle.remove(0);
         runOnUiThread(showCounts);
         return rgbaFrame;
     }
 
-    private Runnable showCounts=new Runnable() {
+    private Runnable showCounts = new Runnable() {
         @Override
         public void run() {
-            float fCount=0.0f;
-            for(int n=0;n<counterCircle.size();n++){
-                fCount+=counterCircle.get(n);
+            float fCount = 0.0f;
+            for (int n = 0; n < mCounterCircle.size(); n++) {
+                fCount += mCounterCircle.get(n);
             }
-            if(counterCircle.size()>0)
-                fCount/=counterCircle.size();
-            int nCount=(int)(fCount+0.5f);
-            setTitle(String.format(Locale.US, "%s - %d шт.",getString(R.string.app_name),nCount));
-            textViewMinRadius.setText(String.format(Locale.US,"%s: %d",getString(R.string.minRaduis),seekBarMinRadius.getProgress()+1));
-            textViewMaxRadius.setText(String.format(Locale.US,"%s: %d",getString(R.string.maxRaduis),seekBarMaxRadius.getProgress()+1));
-            textViewMinDistance.setText(String.format(Locale.US,"%s: %d",getString(R.string.minDistance),seekBarMinDistance.getProgress()+1));
+            if (mCounterCircle.size() > 0)
+                fCount /= mCounterCircle.size();
+            int nCount = (int) (fCount + 0.5f) + mUncountedItem;
+            setTitle(String.format(Locale.US, "%s - %d %s", getString(R.string.app_name), nCount, getString(R.string.items)));
+            mTextViewUncounted.setText(String.valueOf(mUncountedItem));
         }
     };
 
     @Override
     public void onClick(View view) {
-        switch (view.getId()){
+        switch (view.getId()) {
             case R.id.buttonSnapshot:
-                snapShotMode=!snapShotMode;
-                btnSnapShot.setText(snapShotMode?R.string.continuePreview:R.string.takeSnapShot);
+                mSnapShotMode = !mSnapShotMode;
+                mBtnSnapShot.setText(mSnapShotMode ? R.string.continuePreview : R.string.takeSnapShot);
+                mCheckFlash.setEnabled(!mSnapShotMode);
+                break;
+            case R.id.btnMinus:
+                mUncountedItem--;
+                break;
+            case R.id.btnPlus:
+                mUncountedItem++;
+                break;
+        }
+    }
+
+    @Override
+    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+        switch (buttonView.getId()) {
+            case R.id.checkFlash:
+                if (!mSnapShotMode)
+                    mOpenCvCameraView.turnFlash(isChecked);
                 break;
         }
     }
