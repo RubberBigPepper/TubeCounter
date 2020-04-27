@@ -8,4 +8,5 @@
     <string name="flashOn">Включить вспышку</string>
     <string name="items">шт.</string>
     <string name="uncountedItems">Неподсчитанные круги:</string>
+    <string name="resetFocus">Сбросить фокус</string>
 </resources>

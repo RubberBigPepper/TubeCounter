@@ -5,8 +5,10 @@ import androidx.core.app.ActivityCompat;
 import android.Manifest;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Rect;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.MotionEvent;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -34,7 +36,7 @@ import java.util.LinkedList;
 import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity implements CvCameraViewListener2,
-        OnClickListener, CompoundButton.OnCheckedChangeListener {
+        OnClickListener, CompoundButton.OnCheckedChangeListener, View.OnTouchListener {
     private JavaCameraViewEx mOpenCvCameraView;
     private static final int PERMISSION_REQUEST_CODE = 1253;
     private static final int AVERAGE_COUNT = 10;//сколько будем помнить шагов для усреднения
@@ -46,6 +48,7 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
     private CheckBox mCheckFlash;
     private TextView mTextViewUncounted;
 
+    private Button mBtnResetFocus;
     private Button mBtnSnapShot;
     private Button mBtnMinus;
     private Button mBtnPlus;
@@ -72,6 +75,7 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
         mCheckFlash = (CheckBox) findViewById(R.id.checkFlash);
         mTextViewUncounted = (TextView) findViewById(R.id.textViewUncountedItems);
 
+        mBtnResetFocus= (Button) findViewById(R.id.btnResetFocus);
         mBtnSnapShot = (Button) findViewById(R.id.buttonSnapshot);
         mBtnMinus = (Button) findViewById(R.id.btnMinus);
         mBtnPlus = (Button) findViewById(R.id.btnPlus);
@@ -85,9 +89,11 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
         mBtnMinus.setOnClickListener(this);
         mBtnPlus.setOnClickListener(this);
         mBtnSnapShot.setOnClickListener(this);
+        mBtnResetFocus.setOnClickListener(this);
         mCheckFlash.setOnCheckedChangeListener(this);
         mOpenCvCameraView = (JavaCameraViewEx) findViewById(R.id.view);
         mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
+        mOpenCvCameraView.setOnTouchListener(this);
         mOpenCvCameraView.setCvCameraViewListener(this);
         mOpenCvCameraView.setPadding(0, 0, 0, 0);
         OpenCVLoader.initDebug();
@@ -245,6 +251,10 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
             case R.id.btnPlus:
                 mUncountedItem++;
                 break;
+            case R.id.btnResetFocus:
+                if(!mSnapShotMode)
+                    mOpenCvCameraView.resetFocus();
+                break;
         }
     }
 
@@ -257,4 +267,17 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
                 break;
         }
     }
+
+    @Override
+    public boolean onTouch(View v, MotionEvent event) {
+        if (v.getId()==R.id.view){
+            if (event.getAction() == MotionEvent.ACTION_DOWN&&!mSnapShotMode) {
+                mOpenCvCameraView.focusOnTouch(event);
+            }
+            return true;
+        }
+        return false;
+    }
+
+
 }

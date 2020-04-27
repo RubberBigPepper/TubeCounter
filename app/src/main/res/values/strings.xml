@@ -8,4 +8,5 @@
     <string name="flashOn">Turn on flash</string>
     <string name="items">it.</string>
     <string name="uncountedItems">Uncounted items:</string>
+    <string name="resetFocus">Reset focus</string>
 </resources>

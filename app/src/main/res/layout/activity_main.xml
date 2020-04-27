@@ -24,11 +24,26 @@
             android:layout_height="match_parent"
             android:orientation="vertical">
 
-            <Button
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:id="@+id/buttonSnapshot"
-                android:text="@string/takeSnapShot"/>
+                android:orientation="horizontal">
+
+                <Button
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/buttonSnapshot"
+                    style="?android:attr/buttonStyleSmall"
+                    android:text="@string/takeSnapShot"/>
+
+                <Button
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/btnResetFocus"
+                    style="?android:attr/buttonStyleSmall"
+                    android:text="@string/resetFocus"/>
+
+            </LinearLayout>
 
             <CheckBox
                 android:layout_width="wrap_content"
@@ -96,7 +111,7 @@
                 android:layout_height="wrap_content"/>
 
         </LinearLayout>
-    </ScrollView>
 
+    </ScrollView>
 
 </LinearLayout>
