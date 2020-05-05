@@ -9,4 +9,5 @@
     <string name="items">it.</string>
     <string name="uncountedItems">Uncounted items:</string>
     <string name="resetFocus">Reset focus</string>
+    <string name="wrongCircles">Wrong items:</string>
 </resources>

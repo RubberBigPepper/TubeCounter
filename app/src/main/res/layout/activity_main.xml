@@ -53,49 +53,15 @@
                 android:id="@+id/checkFlash"
                 android:text="@string/flashOn"/>
 
-            <LinearLayout
+            <include layout="@layout/plus_minus_counter"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:id="@+id/includeWrongItems"
+                android:layout_height="wrap_content"/>
 
-                <Button
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:id="@+id/btnMinus"
-                    style="?android:attr/buttonStyleSmall"
-                    android:layout_gravity="center_vertical"
-                    android:text="-"/>
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/uncountedItems"/>
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="match_parent"
-                        android:layout_gravity="center_horizontal"
-                        android:id="@+id/textViewUncountedItems"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Medium"
-                        android:text=""/>
-
-                </LinearLayout>
-
-                <Button
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    style="?android:attr/buttonStyleSmall"
-                    android:id="@+id/btnPlus"
-                    android:layout_gravity="center_vertical"
-                    android:text="+"/>
-
-            </LinearLayout>
+            <include layout="@layout/plus_minus_counter"
+                android:layout_width="match_parent"
+                android:id="@+id/includeUncountedItems"
+                android:layout_height="wrap_content"/>
 
             <include layout="@layout/extended_seek"
                 android:layout_width="match_parent"

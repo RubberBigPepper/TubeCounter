@@ -45,17 +45,15 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
     private ExtendedSpinnerHelper mExtSpinnerMaxRadius;
     private ExtendedSpinnerHelper mExtSpinnerMinDistance;
 
-    private CheckBox mCheckFlash;
-    private TextView mTextViewUncounted;
+    private PlusMinusCounterHelper mPlusMinusWrongCirles;
+    private PlusMinusCounterHelper mPlusMinusUncountedCirles;
 
+    private CheckBox mCheckFlash;
     private Button mBtnResetFocus;
     private Button mBtnSnapShot;
-    private Button mBtnMinus;
-    private Button mBtnPlus;
 
     private Mat mMatRGBASnap = null;//последний кадр с камеры, для режима стоп-кадр
     private boolean mSnapShotMode = false;//режим показа последнего кадра
-    private int mUncountedItem = 0;
 
     private LinkedList<Integer> mCounterCircle = new LinkedList<>();//количество кругов на предыдущих шагах для усреднения.
 
@@ -72,13 +70,13 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
         mExtSpinnerMaxRadius = new ExtendedSpinnerHelper(findViewById(R.id.includeMaxRadius), R.string.maxRaduis, 30,100);
         mExtSpinnerMinDistance = new ExtendedSpinnerHelper(findViewById(R.id.includeMinDistance), R.string.minDistance, 1, 100);
 
+        mPlusMinusWrongCirles=new PlusMinusCounterHelper(findViewById(R.id.includeWrongItems),R.string.wrongCircles,0,0,100);
+        mPlusMinusUncountedCirles=new PlusMinusCounterHelper(findViewById(R.id.includeUncountedItems),R.string.uncountedItems,0,0,100);
+
         mCheckFlash = (CheckBox) findViewById(R.id.checkFlash);
-        mTextViewUncounted = (TextView) findViewById(R.id.textViewUncountedItems);
 
         mBtnResetFocus= (Button) findViewById(R.id.btnResetFocus);
         mBtnSnapShot = (Button) findViewById(R.id.buttonSnapshot);
-        mBtnMinus = (Button) findViewById(R.id.btnMinus);
-        mBtnPlus = (Button) findViewById(R.id.btnPlus);
 
         SharedPreferences cPrefs = getSharedPreferences("common", MODE_PRIVATE);
         mExtSpinnerMinRadius.setValue(cPrefs.getInt("minRadius", mExtSpinnerMinRadius.getValue()));
@@ -86,8 +84,6 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
         mExtSpinnerMinDistance.setValue(cPrefs.getInt("minDistance", mExtSpinnerMinDistance.getValue()));
 
         showCounts.run();
-        mBtnMinus.setOnClickListener(this);
-        mBtnPlus.setOnClickListener(this);
         mBtnSnapShot.setOnClickListener(this);
         mBtnResetFocus.setOnClickListener(this);
         mCheckFlash.setOnCheckedChangeListener(this);
@@ -168,6 +164,32 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
         return Math.sqrt(Math.pow(dX1-dX2,2.0d)+Math.pow(dY1-dY2,2.0d));
     }
 
+    private LinkedList<double[]>sortListAsSumDistanceToOthers(LinkedList<double[]>circleList){
+        LinkedList<double[]>circleListDistance=new LinkedList<>();
+        for(int n=0;n<circleList.size();n++) {
+            double[] circle=circleList.get(n);
+            double[] extCircle=new double[4];
+            extCircle[0]=circle[0];
+            extCircle[1]=circle[1];
+            extCircle[2]=circle[2];
+            extCircle[3]=0.0d;//сумма расстояний до других окружностей
+            circleListDistance.add(extCircle);
+            for(int m=0;m<circleList.size();m++){
+                if(m==n)
+                    continue;
+                double[] otherCircle=circleList.get(m);
+                extCircle[3]+=distance(circle[0],circle[1],otherCircle[0],otherCircle[1]);
+            }
+        }
+        Collections.sort(circleListDistance, new Comparator<double[]>() {//сортируем от бОльшего радиуса к меньшему
+            @Override
+            public int compare(double[] o1, double[] o2) {
+                return -Double.compare(o1[3],o2[3]);
+            }
+        });
+        return circleListDistance;
+    }
+
     private  LinkedList <double[]> makeNestingCircles(Mat matCircles){
         LinkedList <double[]>circleList=new LinkedList <double[]>();//коллекция кругов, будем в ней хранить круги для вычленения вложенных
         for (int x = 0; x < matCircles.cols(); x++) {
@@ -206,14 +228,15 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
                 100.0, 30.0, minRadius, maxRadius); // change the last two parameters
         // (min_radius & max_radius) to detect larger circles
         LinkedList <double[]>circleList=makeNestingCircles(circles);//обработка коллекции, вычленение вложенных кругов
-        for(int n=0;n<circleList.size();n++){
+        circleList=sortListAsSumDistanceToOthers(circleList);
+        for(int n=mPlusMinusWrongCirles.getCount();n<circleList.size();n++){
             double[] c = circleList.get(n);
             Point center = new Point(Math.round(c[0]), Math.round(c[1]));
             // circle outline
             int radius = (int) Math.round(c[2]);
-            Imgproc.circle(rgbaFrame, center, radius, new Scalar(255, 0, 255), 3, 8, 0);
+            Imgproc.circle(rgbaFrame, center, radius, new Scalar(255, 0, 255), 2, 8, 0);
         }
-        if(Calendar.getInstance().get(Calendar.MONTH)==3) {
+        if(Calendar.getInstance().get(Calendar.MONTH)==4) {
             mCounterCircle.add(circleList.size());
             while (mCounterCircle.size() > AVERAGE_COUNT)
                 mCounterCircle.remove(0);
@@ -231,9 +254,8 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
             }
             if (mCounterCircle.size() > 0)
                 fCount /= mCounterCircle.size();
-            int nCount = (int) (fCount + 0.5f) + mUncountedItem;
+            int nCount = Math.max(0, (int) (fCount + 0.5f) + mPlusMinusUncountedCirles.getCount() - mPlusMinusWrongCirles.getCount());
             setTitle(String.format(Locale.US, "%s - %d %s", getString(R.string.app_name), nCount, getString(R.string.items)));
-            mTextViewUncounted.setText(String.valueOf(mUncountedItem));
         }
     };
 
@@ -244,12 +266,6 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
                 mSnapShotMode = !mSnapShotMode;
                 mBtnSnapShot.setText(mSnapShotMode ? R.string.continuePreview : R.string.takeSnapShot);
                 mCheckFlash.setEnabled(!mSnapShotMode);
-                break;
-            case R.id.btnMinus:
-                mUncountedItem--;
-                break;
-            case R.id.btnPlus:
-                mUncountedItem++;
                 break;
             case R.id.btnResetFocus:
                 if(!mSnapShotMode)
