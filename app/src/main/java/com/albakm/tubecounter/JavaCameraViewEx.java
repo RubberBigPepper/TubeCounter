@@ -22,6 +22,12 @@ public class JavaCameraViewEx extends JavaCameraView implements Camera.AutoFocus
         super(context, attrs);
     }
 
+    public void setFpsRange(){
+        Camera.Parameters params = mCamera.getParameters();
+        params.setPreviewFpsRange(30000, 30000);
+        mCamera.setParameters(params);
+    }
+
     public void turnFlash(boolean bOn) {
         Camera.Parameters params = mCamera.getParameters();
 
